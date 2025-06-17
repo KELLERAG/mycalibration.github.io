@@ -1,39 +1,48 @@
-![KELLER myCalibration Logo](./media/KELLER_Logo_myCalibration.png "logo")
+![KELLER myCalibration Logo](./media/MyCalibration_transp.png "logo")
 
 Table of Contents
 =================
 
-   [ 1) Overview](#1-overview)  
-   [ 2) Web App](#2-web-app)  
-   [ 3) Web API](#3-web-api)  
-   [ 4) The JSON Schema](#4-the-json-schema)  
-   [ 5) Sample Software](#5-sample-software)  
-   [ 6) FAQ](#6-faq)  
-   [ 7) Roadmap](#7-roadmap)
+   [1) Overview](#1-overview)  
+   [2) Web App](#2-web-app)  
+   [3) Web API](#3-web-api)  
+   [4) The JSON Schema](#4-the-json-schema)  
+   [5) Sample Software](#5-sample-software)  
+   [6) FAQ](#6-faq)  
+   [7) Roadmap](#7-roadmap)  
+   [8) Release Notes](#8-release-notes)
 
 ---
 
 ## 1) Overview
+
 KELLER's «myCalibration» is a data-platform for KELLER customers. Via KELLER «myCalibration», customers can access digital calibration data of their KELLER sensors.
 
 ### Data
+
 ![Web App UI](./media/json-example.jpg)
 
 #### Contents
+
 «myCalibration» is designed with data from various KELLER transducers and transmitters in mind. As an example, it can be used to hold information of Mathematical Compensation Models as well as X-line transmitter calibration data.
 
 #### Format
+
 Calibration data is available in JSON file format. Thanks to its widespread use and a broad availability of programming libraries, this format allows for an easy and quick integration in customer software. What is more, as a quick check, JSON data can be inspected in any text editor.
 
 #### Structure
+
 The structure of the JSON file is defined in a JSON schema. This schema is made publicly available, allowing a full integration in customer software.
 
 ### Access
+
 #### Web App
+
 A user interface that is accessible over any standard web browser gives customers access to calibration data of their sensors. Customer data is only accessible after an individual login and cannot be seen by others.
 After using various search and filter functionalities, the user can download calibration data of individually selected sensors or perform a bulk download of multiple datasets.
 
 #### Web API
+
 A REST API is available for automated access. Customers can integrate this API into their processes. This allows them e.g. to automatically download the calibration data of newly received sensors and integrate this into their production processes.
 
 ---
@@ -47,85 +56,159 @@ The web app is here: [https://mycalibration.azurewebsites.net/](https://mycalibr
 There is a free demo user account with the username '*Demo1234*' and the password '*Demo1234*'.
 
 ### Sign Up & Sign In
-Signing up a user account can be done with the help of engineering@keller-druck.com
+
+Signing up a user account can be done with the help of engineering@keller-pressure.com
 There is already a free demo account '**Demo1234**' with the password '**Demo1234**' to see some demo data.  
 
 ![login example](./media/login-demo1234.png?raw=true)
 
-
 ---
 
 ## 3) Web API
+
 The Web API's URL is [https://mycalibrationapi.azurewebsites.net](https://mycalibrationapi.azurewebsites.net)
 
 The OpenAPI specification page is: [https://mycalibrationapi.azurewebsites.net/swagger/index.html](https://mycalibrationapi.azurewebsites.net/swagger/index.html)
 
 All the calibration data can be exported as
-- JSON meta-information (header only) 
+
+- JSON meta-information (header only)
 - zip file with the filtered and compressed JSON files (header+data)
 
 The Swagger JSON file can be found here: [https://mycalibrationapi.azurewebsites.net/swagger/v1/swagger.json](https://mycalibrationapi.azurewebsites.net/swagger/v1/swagger.json)
 
-### API endpoints
+### Most important API endpoints
 
-
-#### GET /v1/Me
-Responds with an overview about the logged-in user and the data the user has access to.
 #### GET /v1/CalibrationData/Headers
-Responds with the meta-information about the calibration data. See [Header data](#generalizedcalibrationdataheader). See [filter parameters](#filter-parameters).
+
+Responds with the meta-information(header-part) about accessible calibration data. See [Header data](#mefistoviewmodel).
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| skip | query | OPTIONAL. Skips the given number of rows. The opposite of Take. | No | integer |
+| take | query | OPTIONAL. Takes only the first .. rows of meta information. The opposite of Skip. When not specified the API tries to get all rows. | No | integer |
+
 #### GET /v1/CalibrationData
-Responds with the filtered calibration data in JSON form. See [filter parameters](#filter-parameters). See [filter parameters](#filter-parameters).
+
+Responds with the complete calibration data in JSON form. See [filter parameters](#filter-parameters). The query can be filtered. See [filter parameters](#filter-parameters).
 
 #### GET /v1/CalibrationData/Export
-Exports the filtered calibration data as ZIP or BROTLI file with the calibration files (JSON)
-Brotli-file-type is not supported as of now.
+
+Exports the filtered calibration data as ZIP (or BROTLI) file with the calibration files (JSON). As a result, a download link is replied. *Brotli-file-type is not supported as of now.*
 
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
-| fileType | query |  | No | integer |
+| fileType | query | 1 = All calibration data items will be merged in one JSON list  2 = All calibration data items will be merged in one JSON list. This JSON file will be compressed to zip file  3 = Every calibration data items will stored as JSON file. All these files will be compressed to one single zip file  4 = Every calibration data items will stored as JSON file. All these files will be compressed to one single brotli file | No | [ExportFileType](#ExportFileType) |
 
-##### ExportFileType
+plus all [filter parameters](#filter-parameters)
 
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| ExportFileType | integer |  |  |
+#### GET /v1/CalibrationData/Count
 
-#### POST /v1/CalibrationData/
-##### Parameters
+Get the count of the calibration data set based on the optional search parameters. See [filter/search parameters](#filter-parameters).
+If optionalSearchParameter or its fields are null then the returned number is the amount of all sensors the account has access to.
+You can use this to quickly find out how many files you request with a given query.
+
+#### GET /v1/CalibrationData/List
+
+Get a list of all identifier strings of the calibration data set defined by the optional search parameters. See [filter/search parameters](#filter-parameters).
+These identifier strings (***IncludedIds***) can then used as input as filter parameter for a query in ***GET /v1/CalibrationData***
+
+### GET /v1/CalibrationData/New
+
+Get a list of all data that is stored in myCalibration after given datetime ***since***. Data is stored in myCalibration mostly, 1 day before the start of the delivery from Switzerland. This correlates with the dispatch date but differs often.  
 
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
-| fileType | query |  | No | integer |
+| since | query | UTC DateTime - Responses contain all data younger than this moment  | Yes | integer |
 
+### PUT /v1/CalibrationData/New
 
-### GeneralizedCalibrationDataHeader
+WARNING: Only use when you know what you do. Better ask engineering@keller-pressure.com
+Gathers all NEW data. 'New data' is calibration data that was never requested with this request. A second request might return an empty list.
+Optionally, if the new data could not be stored, then with 'countOfHoursDataWasAlreadyRequested' the data requested will be shown again back to the given hours.
+Optionally, 'countOfHoursDataWasAlreadyAssigned' can be used
 
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| CompensatedPressureRange | object | - Range of physical quantities consisting of a minimum and maximum magnitude and a unit of  measurement<br /> - Pressure range of the mathematical compensation model<br /> - Pressure range over which the sensors characteristics have been compensated | No |
-| CompensatedTemperatureRange | object | - Range of physical quantities consisting of a minimum and maximum magnitude and a unit of measurement<br /> - Temperature range of the mathematical compensation model<br /> - Temperature range over which the sensors characteristics have been compensated | No |
-| CreationDate | string | File creation date | No |
-| CustomerName | string | Customer name | No |
-| CustomerNumber | integer | KELLER customer identification number | No |
-| CustomerOrderNumber | string | Customer internal purchase order number | No |
-| CustomerProductType | string | Customer internal product type | No |
-| CustomerReferenceNumber | string | Customer internal reference number | No |
-| ElectricSupply | object | Unit of measurement | No |
-| OrderNumber | integer | KELLER purchase order number | No |
-| OrderPosition | integer | KELLER purchase order position | No |
-| OrderTargetDispatchDate | string | Targeted dispatch date of the order | No |
-| PressureType | string | KELLER product pressure mode | No |
-| ProductNumber | string |  | No |
-| ProductSeries | string | KELLER product series | No |
-| ProductType | string | KELLER product type | No |
-| Remarks | string |  | No |
-| SerialNumber | string | KELLER product serial number | No |
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| take | query |  | No | integer |
+| countOfHoursDataWasAlreadyRequested | query |  | No | integer |
+| countOfHoursDataWasAlreadyAssigned | query |  | No | integer |
+
+### MefistoViewModel
+
+Mefisto = MEtainfo for FIle STOrage
+Example:
+
+```
+{
+  "id": 28651,
+  "customerName": "DemoData Inc.",
+  "customerNumber": 12345678,
+  "subCustomerNumber": 0,
+  "remarks": "",
+  "serialNumber": "23650",
+  "productNumber": "123856.1113",
+  "productType": "PA-23R",
+  "pressureType": "Pa",
+  "productSeries": "23R",
+  "compensatedTemperatureRangeMin": 15.0,
+  "compensatedTemperatureRangeMax": 70.0,
+  "compensatedTemperatureRangeUnit": "C",
+  "compensatedPressureRangeMin": 0.0,
+  "compensatedPressureRangeMax": 1.0,
+  "compensatedPressureRangeUnit": "Bar",
+  "electricSupplyMin": 4.5,
+  "electricSupplyMax": 24.0,
+  "electricSupplyMagnitude": 0.0,
+  "electricSupplyUnit": "V",
+  "orderNumber": 9990740,
+  "orderPosition": 1,
+  "orderTargetDispatchDate": "2017-05-26T00:00:00",
+  "customerOrderNumber": "Cust-9990740-123",
+  "customerReferenceNumber": "ABC",
+  "customerProductType": "123451-1113",
+  "subCustomerOrderNumber": null,
+  "subCustomerOrderPosition": null,
+  "assignedToSubCustomerDateUtc": null
+}
+```
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+|Id | Integer | internal id                                                                                                    |
+|CustomerName | String | Customer name                                                                                         |
+|CustomerNumber | Integer | KELLER customer identification number                                                              |
+|SubCustomerNumber | Integer | KELLER customer identification number for a customer of a customer                              |
+|Remarks | String | File creation date (UTC)                                                                                   |
+|SerialNumber | String | KELLER product serial number                                                                          |
+|ProductNumber | String | KELLER product number                                                                                |
+|ProductType | String | KELLER product type                                                                                    |
+|PressureType | String | KELLER product pressure type                                                                          |
+|ProductSeries | String | KELLER product series                                                                                |
+|CompensatedTemperatureRangeMin | Double | Temperature range over which the sensors characteristics have been compensated <br /> Min  |
+|CompensatedTemperatureRangeMax | Double | Temperature range over which the sensors characteristics have been compensated <br /> Max  |
+|CompensatedTemperatureRangeUnit | String | Temperature range over which the sensors characteristics have been compensated U<br /> nit|
+|CompensatedPressureRangeMin | Double | Pressure range over which the sensors characteristics have been compensated <br /> Min        |
+|CompensatedPressureRangeMax | Double | Pressure range over which the sensors characteristics have been compensated <br /> Max        |
+|CompensatedPressureRangeUnit | String | Pressure range over which the sensors characteristics have been compensated <br /> Unit      |
+|ElectricSupplyMin | Double | Nominal electric supply Min                                                                      |
+|ElectricSupplyMax | Double | Nominal electric supply Max                                                                      |
+|ElectricSupplyMagnitude | Double | Nominal electric supply Magnitude                                                          |
+|ElectricSupplyUnit | String | Nominal electric supply Unit                                                                    |
+|OrderNumber | Integer | KELLER purchase order number                                                                          |
+|OrderPosition | Integer | KELLER purchase order position                                                                      |
+|OrderTargetDispatchDate | Date | Targeted dispatch date of the order                                                          |
+|CustomerOrderNumber | String | Customer internal purchase order number                                                        |
+|CustomerReferenceNumber | String | Customer internal reference number                                                         |
+|CustomerProductType | String | Customer internal product type                                                                 |
+|SubCustomerOrderNumber | String | Invoice Number from the Customer for the SubCustomer                                        |
+|SubCustomerOrderPosition | String | Additional order details for the SubCustomer from the Customer. Eg.\"Invoice Line\"       |
+|AssignedToSubCustomerDateUtc | Date | Timestamp of the moment the data was assigned to a sub customer                         |
 
 ### Filter parameters
 
 | Name | Located in | Description | Required | Schema  |
 | ---- | ---------- | ----------- | -------- | ------- |
-| fileType | query  |             | No       | integer |
 | IncludedIds | query | If null: Either are 'ALL SELECTED' or some are unselected (and listed in ExcludedIds)<br />  If not null: None are selected except those that are listed here.<br />  It is not allowed to have IncludedIds AND ExcludedIds have listed values. One most be null or both most be null.<br />  The list of included ids is limited to 50. More than 50 will throw an exception.<br /> | No | [ string ] |
 | ExcludedIds | query | If null: Either are 'ALL SELECTED' or only some few are selected (and listed in IncludedIds)<br />  If not null: All are selected and except those that are listed here.<br />  It is not allowed to have IncludedIds AND ExcludedIds have listed values. One most be null or both most be null.<br />  The list of excluded ids is limited to 50. More than 50 will throw an exception.<br /> | No | [ string ] |
 | OrderNumbers | query | List of Order Numbers | No | [ string ] |
@@ -134,7 +217,7 @@ Brotli-file-type is not supported as of now.
 | Date | query | Dispatch-date text in format 'yyyy-MM-dd' eg. "2021-12-24"<br />  Normally, this is a list with one element. Nevertheless, it is possible to GET calibration data from multiple dates. In this case DateFilterType must be 'equals' and DateTo must be null. | No | [ string ] |
 | DateTo | query | Used when DateFilterType is 'inRange'.<br />  Data is gathered from 'Date' to 'DateTo'<br />  Date text in format 'yyyy-MM-dd' eg. "2021-12-24" | No | string |
 | CustomerProductTypes | query | To search for [Blanks] use "blank" | No | [ string ] |
-| PressureTypes | query | Eg. ["Pa","Paa","Pr"] | No | [ string ] |
+| PressureTypes | query | Eg. ["pa","paa","pr"]  To see all possible enum strings, go to <https://mycalibration.github.io/#filter-parameters> | No | [ string ] |
 | ProductSeries | query | Eg. ["10LHP","25Y","46X","K-102"] | No | [ string ] |
 | ProductNumbers | query |  | No | [ string ] |
 | SerialNumberSearchText | query | Use this to find all SerialNumbers that contains this text content. | No | string |
@@ -162,15 +245,16 @@ Brotli-file-type is not supported as of now.
 | SupplyMagnitude | query | The exclusive lower bound of the "Supply Magnitude"<br />  Either Min/Max is used or Magnitude. | No | double |
 | SupplyMagnitudeTo | query | The exclusive upper bound of the "Supply Magnitude"<br />  Used when SupplyMagnitudeFilterType is 'inRange'.<br />  Data is gathered from 'SupplyMagnitude' to 'SupplyMagnitudeTo'<br />  Either Min/Max is used or Magnitude. | No | double |
 | SupplyUnit | query | <list type="string">List of the Supply Unit</list> | No | [ string ] |
-| CustomerReferenceNumberSearchText | query | Find all data that contains this search text | No | string |
-| CustomerOrderNumberSearchText | query | Find all data that contains this search text | No | string |
-| RemarksSearchText | query | Find all data that contains this search text | No | string |
+| CustomerReferenceNumberSearchText | query | Find all data with contains this search text | No | string |
+| CustomerOrderNumberSearchText | query | Find all data with contains this search text | No | string |
+| RemarksSearchText | query | Find all data with contains this search text | No | string |
 
 #### Filter parameters - PhysicalUnits & PressureTypes
 
 #### Filter parameters - PhysicalUnits : PressureUnit, TemperatureUnit, SupplyUnit
 
 Although '*%FS*' is shown in the UI and listed in the JSON, the API parameter string used is '*Fs*'.
+
 ```
  ________________________
 |          |             |
@@ -213,7 +297,9 @@ Although '*%FS*' is shown in the UI and listed in the JSON, the API parameter st
 ```
 
 ##### Filter parameters - PressureTypes
+
 Although '*PA*' is shown in the UI and listed in the JSON, the API parameter string used is '*Pa*'.
+
 ```
  ______________________
 |        |             |
@@ -229,28 +315,68 @@ Although '*PA*' is shown in the UI and listed in the JSON, the API parameter str
 
 ### Example queries
 
-TODO
+Please see <https://github.com/mycalibration/mycalibration.github.io>
 
-### Generate client SW using the OpenAPI/swagger schema. 
-[https://editor.swagger.io/](https://editor.swagger.io/)
+### Generate client SW using the OpenAPI/swagger schema
+
+Use [https://editor.swagger.io/](https://editor.swagger.io/)
+The Swagger/Openapi import URL is here: <https://mycalibrationapi.azurewebsites.net/swagger/v1/swagger.json>
+
+### Accessing the API with the Permanent Access Token
+
+There are two types of tokens. The Permanent Access Token and the Temporary Access Token.  
+
+With the Temporary Access Token it is possible to access the data via API using the [Swagger/OpenAPI UI](https://mycalibrationapi.azurewebsites.net/swagger/index.html). This is working for a couple of hours after login.  
+
+The Permanent Access Token is used to access the API programmatically without manual login.
+
+#### Temporary Access Token
+
+Get the Temporary Access Token form the Profile Settings:  
+![Profile Settings](./media/temporary-access-token.png)  
+
+In the [Swagger/OpenAPI UI](https://mycalibrationapi.azurewebsites.net/swagger/index.html) click on the Authorize button and enter the Temporary Access Token:
+![Profile Settings](./media/temporary-access-token-in-swagger.png)
+
+#### Permanent Access Token
+
+As of now, you have to request the the Permanent Access Token directly from KELLER's myCalibration Support Team : <engineering@keller-pressure.com>  
+
+The provided access token must be the value with the key 'userOid' in the header of every request. This way a bearer token and the OAuth 2 flow is NOT needed anymore.
+![Using the Permanent Access Token](./media/permanent-access-token-postman.png)
+
+Use tools like Postman, Insomnia or curl to test the API.  
+There are many programming examples on [Github](https://github.com/mycalibration/mycalibration.github.io/).
+Here an example in C#:  
+  ```csharp 
+  var url         = "https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/Headers";
+  var httpRequest = (HttpWebRequest)WebRequest.Create(url);
+
+  // Add the permanent access token to the header with the userOid key
+  httpRequest.Headers["userOid"] = "eyJhbGciOiJIUzI1NiIsInR....";
+
+  string resultJsonText;
+  HttpWebResponse httpResponse = (HttpWebResponse)httpRequest.GetResponse();
+  using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+  {
+    resultJsonText = streamReader.ReadToEnd();
+  }
+  ```
 
 ---
 
-
 ## 4) The JSON Schema
 
-The schema can be downloaded as JSON Schema [here](https://github.com/mycalibration/mycalibration.github.io/blob/main/schema/keller-sensor-data.schema.json).
+The schema can be downloaded as JSON Schema [here](https://github.com/mycalibration/mycalibration.github.io/blob/main/schema/keller-sensor-data.schema.json). And converted to various other file types [here](https://editor.swagger.io/).
 
-| Root objects |  Explanation | 
-| ------------ | ------------ | 
-| Version |  Version string for the schema with semantic versioning (MAJOR.MINOR.PATCH)  E.g. "1.0.0" | 
-| Header |  Meta-information data to identify the sensor data | 
-| CompensationMethods | MathMod data | 
-| Measurements | Measurements point of the T/P-calibration-curve | 
-
+| Root objects |  Explanation |
+| ------------ | ------------ |
+| Version |  Version string for the schema with semantic versioning (MAJOR.MINOR.PATCH)  E.g. "1.0.0" |
+| Header |  Meta-information data to identify the sensor data |
+| CompensationMethods | MathMod data |
+| Measurements | Measurements point of the T/P-calibration-curve |
 
 ![login example](./media/keller-sensor-data.png?raw=true)
-
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -423,7 +549,7 @@ The schema can be downloaded as JSON Schema [here](https://github.com/mycalibrat
     <td class="tg-0lax">"123456700012"</td>
   </tr>
   <tr>
-    <td class="tg-0lax" rowspan="27">measurements[] *</td>
+<td class="tg-0lax" rowspan="27">measurements[]*</td>
     <td class="tg-0lax"> </td>
     <td class="tg-0lax">Array&nbsp;of individual measurements. Item order corresponds to order in measurement&nbsp;sequence.</td>
     <td class="tg-0lax"> </td>
@@ -538,19 +664,20 @@ The schema can be downloaded as JSON Schema [here](https://github.com/mycalibrat
 
 Github repo: [https://github.com/mycalibration/mycalibration.github.io/](https://github.com/mycalibration/mycalibration.github.io/)
 
-- **/docs**  *- Content of the documentation page https://mycalibration.github.io/*
+- **/docs**  *- Content of the documentation page <https://mycalibration.github.io/>*
 - **/samples**
   - **/api**
     - [**/csharp-dotnet/simple**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/api/csharp-dotnet/simple) *- Simple C# example to show how to get data from the API and parse it.*
     - [**/csharp-dotnet/swagger-codegen**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/api/csharp-dotnet/swagger-codegen)  *- Auto-Generated code based of the OpenAPI file. Generated on /editor.swagger.io*  
-    - [**/python/simple**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/api/python/simple/get-data.py)  *- Simple Pyton example to show how to get data from the API and parse it.* 
+    - [**/python/simple**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/api/python/simple/get-data.py)  *- Simple Python example to show how to get data from the API and parse it.*
     - [**/python/swagger-codegen**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/api/python/swagger-codegen)    *- Auto-Generated code based of the OpenAPI file. Generated on editor.swagger.io*  
-    - [**/labview/simple**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/api/labview/simple/)  *- LabView example to show the API access via permanent access token and how to extract data out of the response.* 
+    - [**/labview/simple**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/api/labview/simple/)  *- LabView example to show the API access via permanent access token and how to extract data out of the response.*
   - [**/data-model/KellerSensorData.cs**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/data-model/KellerSensorData.cs)  *- C# class with the data schema structure implemented.*  
   - **/json-to-csv**
     - [**/json-to-csv-converter**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/json-to-csv/json-to-csv-converter/)  *- Converter source to demonstrate the conversion from the JSON data to the old obsolete text/CSV file data.*
     - [**/ConverterUsageSample/Program.cs**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/json-to-csv/ConverterUsageSample/Program.cs)  *- Example usage of the converter.*
     - [**/OnlineConverterBlazorApp**](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/json-to-csv/OnlineConverterBlazorApp/)  *- Another example usage of the converter by creating a Blazor Web Assembly App that converts the JSON to the old text files.*
+  - [**/combined/WinFormsApp**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/combined/WinFormsApp) *- Windows Forms Demo app (C# with .NET6) to show how to get data from the API, convert the result to an C# object and convert the calibration data to the old obsolete text/CSV file data using the [**/json-to-csv-converter**](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/json-to-csv/json-to-csv-converter/)*
 - [**/schema/keller-sensor-data.schema.json**](https://github.com/mycalibration/mycalibration.github.io/blob/main/schema/keller-sensor-data.schema.json)  *- The myCalibration JSON schema*  
 
 - Online 'JSON to old text files'-converter : [https://mycalibration.github.io/converter](https://mycalibration.github.io/converter)
@@ -559,45 +686,97 @@ Github repo: [https://github.com/mycalibration/mycalibration.github.io/](https:/
 
 ## 6) FAQ
 
- - ***Can I try out the «myCalibration» service?***  
- Yes. Use the user 'Demo1234' and its password 'Demo1234'. This gives you access to a demo account with some valid demo data. 
+- ***Can I try out the «myCalibration» service?***  
+ Yes. Use the user 'Demo1234' and its password 'Demo1234'. This gives you access to a demo account with some valid demo data.
 
- - ***How can I automatically download the data and store it into my database / SCADA / file system?***  
+- ***How can I automatically download the data and store it into my database / SCADA / file system?***  
  Use the Web API ([https://mycalibrationapi.azurewebsites.net/](https://mycalibrationapi.azurewebsites.net/)) and a permanent access token to access the data on-demand via REST API queries. The SW for this is not complicated. Use meaningful filter parameter and load the data periodically.
 
- - ***What is the easiest way to develop software to download the data?***  
+- ***What is the easiest way to develop software to download the data?***  
  There is open-sourced sample SW on [https://github.com/mycalibration/mycalibration.github.io/](https://github.com/mycalibration/mycalibration.github.io/)  
  Use the [swagger UI](https://mycalibrationapi.azurewebsites.net/swagger/index.html) and a temporary access token to get yourself familiar with the filter parameters.  
  Use the [swagger file](https://mycalibrationapi.azurewebsites.net/swagger/v1/swagger.json) to generate a client SW in your preferred language using generator-SW such as [https://editor.swagger.io/](https://editor.swagger.io/) (C#, Go, HTML, Java, Javascript, Python, PHP, Scala, Typescript...)
 
- - ***I have the JSON file. How do I parse these files to extract the information I need?***  
+- ***I have the JSON file. How do I parse these files to extract the information I need?***  
  The JSON files underlie a [JSON schema](https://github.com/mycalibration/mycalibration.github.io/blob/main/schema/keller-sensor-data.schema.json). This schema can be used to generate code artifacts that help to parse the information. See [https://json-schema.org/implementations.html#generators-from-schemas](https://json-schema.org/implementations.html#generators-from-schemas)  
  We used [https://app.quicktype.io/](https://app.quicktype.io/) to generate [the C# data classes](https://github.com/mycalibration/mycalibration.github.io/blob/main/samples/data-model/KellerSensorData.cs) that makes it easy to deserialize the JSON.
  As an example, the JSON data is parsed and converted to the old txt/CSV files in [the converter example](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/json-to-csv/json-to-csv-converter/myCalibration.Converters).
+
+- ***How do I find new data? Is there a notification system?***  
+No, there is no notification system. You have to periodically ask the API for new data.  
+Unfortunately, it is also not that easy to find new data. There are some ways:
+  - Periodically, check the number of calibration data. If the number is higher then try to find new data. (Use ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/Count```)
+  - Just load all metadata (```GET https://mycalibrationapi.azurewebsites.net/v1/Headers```) and compare it with the data you already downloaded and stored (using the *ProductNumber* and the *SerialNumber*).
+  - Be aware that the Dispatch-Date is not a good way to filter for new data. It is the supposed date for the delivery. In reality, it might be that an order was produced and sent earlier than another order with a even earlier dispatch date.
+  - Another way is to use the ```PUT <https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/New```. When using this endpoint, it response with all new data. Be aware that when requesting this data then the data is marked and manipulates internally. Hence the ```PUT```. A second request shortly after the first will response without data.  
+  - Another way is to store the ids (identifier strings), get the list of all identifier strings and compare & search for new ones. If there are new ones than just download them with ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData?IncludedIds=12345&IncludedIds=12346``` as an example.
+  - There is also ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/New``` and with the required DateTime parameter. You will get back the list of data that was newly ingested from the given moment (UTC).
+  - To combine the two ideas above, there is also ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/List/New``` that responds with a list of identifier strings that are newer than a certain given DateTime (UTC). Use this list to synchronize with your stored data using the identifier strings as a lookup key. An example call looks like this: ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/List/New?since=2023-04-01T12:15:00.000Z```
+
+- ***What are best practices when using the API? What endpoints should I use?***  
+Generally, there should be two steps:  
+    1. Periodically load new data and store it into your DB/file system.  
+    2. Extract the coefficients (and more information) from the JSON and store it or use it to program your firmware with the sensor.  
+  - Use the count request to check if you have the same amount of data stored ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/Count``` Otherwise, download the data.
+  - Alternatively, you can download all the meta information from ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/Header```. These are the fields you see in the web app columns.
+  - When downloading data, you can filter for all the meta information. This is how the web app works. Enable the 'Developer Mode' to see the used filter parameter and the resulting API call.
+  - Downloading data is best made with the ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData``` call. It responses with a list of all filtered JSON files.
+  - If you have a list of serial numbers you can use the serial number as a filter parameter and download each JSON content individually
+  - It is not recommended to use the ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/Export``` query. Prefer to download the content directly with ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData```  
+  - The myCalibration API might not work 100%. Consider appropriate reactions in case an API query is not responding and try the query later.
+  
+- ***What makes files unique? Is the serial number enough for an identification?***  
+Generally, product-number and serial-number should good enough to define a unique sensor data set.
+Nevertheless, a JSON file looks like this:
+```{Product Number}_{Serial Number}_{File Creation Date}_{MathMod Number}.json```
+Eg.   **100715.0244_X12345_2023-04-06_0123.json**  
+In rare cases, a sensor is send back to us for re-calibration. This is why the file creation date is included in the file name.
+Some customer buy sensors from KELLER with multiple MathMod (most probably because they have different use cases with different pressure/temperature ranges) and for this, the MathMod number is included, too. In this case, two files are created for each MathMod.  
+
+- ***What happens when I have multiple entries with the same serial number?***
+This might happen when a sensor is send back to us for reparation or re-calibration. In this case, the serial number is not unique anymore. Multiple entries with the same serial number can be found in the Web App or API call. The correct entry is the most recent and can be identified by the 'File Creation Date' column.  
+
+- ***How can I get only 'new' data from the API?***
+Instead of ```GET https://mycalibrationapi.azurewebsites.net/v1/CalibrationData``` to get ALL data, use ```PUT https://mycalibrationapi.azurewebsites.net/v1/CalibrationData/New``` to get only the newest data not requested before. This request will mark the data as 'requested' and will not be returned again with the next ```PUT``` request. Except when using the optional parameters ```countOfHoursDataWasAlreadyRequested``` or ```countOfHoursDataWasAlreadyAssigned``` which can again override the 'requested' state for a given time span.  
  
- - ***But I use these TestRun.txt and ....csv files for years. Why should I change to the JSON file?***
+- ***Where can I see the Terms & Conditions?***  
+[TermsAndConditions_Nutzungsbedingungen_2022.pdf]<https://prodspakellercloud.blob.core.windows.net/mycalibration/assets/myCalibration_TermsAndConditions_Nutzungsbedingungen_2022.pdf>  
+
+- ***I tried the converter. It does not give me the 1:1 data as the TXT file I am used to. Why?***  
+The converter was build as a proof-of-concept in order to show that nearly all information in the TXT/CSV files are also stored in the JSON file. It is not meant as a 1:1 conversion and should not be used in production.
+
+- ***But I use these TestRun.txt and ....CSV files for years. Why should I change to the JSON file?***  
  Changing to the JSON files is not that difficult for a developer given the many examples. [The converter example](https://github.com/mycalibration/mycalibration.github.io/tree/main/samples/json-to-csv/json-to-csv-converter/myCalibration.Converters) shows how to access the JSON data and extract the needed (coefficients) data.
  The [online converter](https://mycalibration.github.io/converter) also demonstrates the possibility to extract the needed data from the JSON files.
 
- - ***Is this platform secure? Are any standards used?***  
+- ***Is this platform secure? Are any standards used?***  
  Yes. Customer data is only accessible after an individual login and cannot be seen by others. Thanks to best practices, audits and Microsoft's 'Azure Active Directory B2C' authentication technology, security is guaranteed.
- 
- The «myCalibration» platform uses the access, storage and authentication of users and data in/from a MICROSOFT (Azure) data center. This data center is in the EU and subject to EU regulations ( EU Data Protection Regulation [DSGVO] ). https://www.microsoft.com/de-de/TrustCenter/Privacy/gdpr/default.aspx
 
- Be aware that there is no relevant 'personal data' stored.
- 
+  The «myCalibration» platform uses the access, storage and authentication of users and data in/from a MICROSOFT (Azure) data center. This data center is in the EU and subject to EU regulations ( EU Data Protection Regulation [DSGVO] ). <https://www.microsoft.com/de-de/TrustCenter/Privacy/gdpr/default.aspx>
+  Be aware that there is no relevant 'personal data' stored.
  What standards does Microsoft guarantee?
- https://azure.microsoft.com/en-us/overview/trusted-cloud/ (overview)
- https://azure.microsoft.com/en-us/blog/microsoft-azure-leads-the-industry-in-iso-certifications/ (overview)
- List of standards: https://www.microsoft.com/en-us/trustcenter/compliance/complianceofferings eg ISO 9001 , ISO 20000-1: 2011, ISO 2230, ISO 27001, ISO 27017, ISO 27018, BIR 2012 (Netherlands), UK G-Cloud, Argentina PDPA …
+ <https://azure.microsoft.com/en-us/overview/trusted-cloud/> (overview)
+ <https://azure.microsoft.com/en-us/blog/microsoft-azure-leads-the-industry-in-iso-certifications/> (overview)
+ List of standards: <https://www.microsoft.com/en-us/trustcenter/compliance/complianceofferings> eg ISO 9001 , ISO 20000-1: 2011, ISO 2230, ISO 27001, ISO 27017, ISO 27018, BIR 2012 (Netherlands), UK G-Cloud, Argentina PDPA …
 
- - ***Where do I get a permanent access token from to access the API?***   
+- ***Where do I get a permanent access token from to access the API?***  
  The temporary and permanent access token can be seen in the web app under "Profile Settings" which can be found with the button of the company name.  
  There is always the temporary access token that can be used for the [Swagger/OpenAPI UI](https://mycalibrationapi.azurewebsites.net/swagger/index.html).  
- If the permanent access token is not visible for you then you might need to be given the needed authorization from engineering@keller-druck.com. Ask for an permanent access token.
+ If the permanent access token is not visible for you then you might need to be given the needed authorization from engineering@keller-pressure.com. Ask for an permanent access token.
 
+ - ***How do I USE the permanent access token access the API?***  
+ See [Accessing the API with the Permanent Access Token](#accessing-the-api-with-the-permanent-access-token)
 
 ---
+
 ## 7) Roadmap
- - Terms Of Service
- - Registration Page
+
+- Update Documentation / Schema  
+- Update release notes and planned maintenance windows
+- Description of new "Pressure Line Dependency"remark  
+
+---
+
+## 8) Release Notes
+
+See [Release Notes](https://mycalibration.github.io/release-notes)  
